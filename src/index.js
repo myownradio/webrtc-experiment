@@ -4,13 +4,8 @@ function createPeer(videoElement, signalingChannel, ownCallId) {
     const peer = new RTCPeerConnection()
     const constraints = { video: true }
 
-    peer.ontrack = (event) => {
-        console.log('track received')
-        videoElement.srcObject = event.streams[0]
-    }
-
     signalingChannel.on('message', ({ toId, fromId, desc, candidate }) => {
-        console.log('signal', desc.type, fromId, toId)
+        console.log('message', desc, fromId, toId)
         if (desc) {
             if (desc.type === 'offer' && toId === ownCallId) {
                 peer.setRemoteDescription(desc).then(() => {
@@ -21,12 +16,14 @@ function createPeer(videoElement, signalingChannel, ownCallId) {
                 }).then(answer => {
                     return peer.setLocalDescription(answer)
                 }).then(() => {
-                    signalingChannel.emit('message', {
-                        toId: fromId,
-                        fromId: toId,
-                        desc: peer.localDescription
-                    })
-                    console.log('answer sent')
+                    console.log('send answer')
+                    setTimeout(() => {
+                        signalingChannel.emit('message', {
+                            toId: fromId,
+                            fromId: toId,
+                            desc: peer.localDescription
+                        })
+                    }, 0)
                 })
             } else if (desc.type === 'answer' && toId === ownCallId) {
                 console.log('answer received')
@@ -37,6 +34,12 @@ function createPeer(videoElement, signalingChannel, ownCallId) {
         }
     })
 
+    peer.ontrack = (event) => {
+        console.log('ontrack', ownCallId, event)
+        if (videoElement.srcObject) return
+        videoElement.srcObject = event.streams[0]
+    }
+
     return function callTo(theirCallId) {
         peer.onnegotiationneeded = () => {
             console.log('negotiation')
@@ -46,11 +49,13 @@ function createPeer(videoElement, signalingChannel, ownCallId) {
             }).then(() => {
                 console.log('signaling offer')
 
-                return signalingChannel.emit("message", {
-                    toId: theirCallId,
-                    fromId: ownCallId,
-                    desc: peer.localDescription
-                })
+                setTimeout(() => {
+                    return signalingChannel.emit("message", {
+                        toId: theirCallId,
+                        fromId: ownCallId,
+                        desc: peer.localDescription
+                    })
+                }, 0)
             })
         }
 
