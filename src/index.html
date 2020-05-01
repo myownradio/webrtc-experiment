@@ -3,13 +3,7 @@
 <head>
     <title>WebRTC</title>
     <style>
-        #video1 {
-            width: 320px;
-            height: 240px;
-            background: black;
-        }
-
-        #video2 {
+        .video {
             width: 320px;
             height: 240px;
             background: black;
@@ -17,12 +11,17 @@
     </style>
 </head>
 <body>
-<video id="video1" autoplay></video>
-<video id="video2" autoplay></video>
-<form id="form">
-    <input type="text" title="callee" name="callee">
-    <button type="submit">Call</button>
-</form>
-<script src="./index.js"></script>
+<div id="root"></div>
+<!--<section class="devices" id="devices"></section>-->
+<!--<section class="info">-->
+<!--    <span>Caller ID</span>: <span id="caller-id"></span>-->
+<!--</section>-->
+<!--<video id="own-video" class="video" autoplay></video>-->
+<!--<section id="videos"></section>-->
+<!--<form id="form">-->
+<!--    <input type="text" title="Call To" placeholder="Call to ..." name="callee">-->
+<!--    <button type="submit">Call</button>-->
+<!--</form>-->
+<script src="./index.ts"></script>
 </body>
 </html>
