@@ -16,9 +16,9 @@
   "scripts": {
     "start": "parcel serve ./src/index.html",
     "prebuild": "npx rimraf dist",
-    "build": "parcel build ./src/index.html",
+    "build": "parcel build ./src/index.html --public-url .",
     "predeploy": "yarn run build",
-    "deploy": "npx gh-pages -d dist"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "reconnecting-websocket": "^4.4.0",
