@@ -12,6 +12,20 @@ export default function useAutoCall(
   const [error, setError] = useState<null | Error>(null)
 
   useEffect(() => {
+    if (!localStream) return
+
+    const listener = () => {
+      // todo update stream
+    }
+
+    localStream.addListener('update', listener)
+
+    return () => {
+      localStream.removeListener('update', listener)
+    }
+  }, [MyMediaStream])
+
+  useEffect(() => {
     if (!remoteId || !localStream) return
     const { mediaStream } = localStream
 

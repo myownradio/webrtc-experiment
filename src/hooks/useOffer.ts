@@ -15,6 +15,22 @@ export default function useOffer(
   localStream?: MyMediaStream
 ): null | Error {
   const [error, setError] = useState<null | Error>(null)
+
+  // todo create hook
+  useEffect(() => {
+    if (!localStream) return
+
+    const listener = () => {
+      // todo update stream
+    }
+
+    localStream.addListener('update', listener)
+
+    return () => {
+      localStream.removeListener('update', listener)
+    }
+  }, [MyMediaStream])
+
   useEffect(() => {
     if (error || !localStream) return
 
