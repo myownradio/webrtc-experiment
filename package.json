@@ -8,6 +8,7 @@
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^5.2.0",
+    "gh-pages": "^2.2.0",
     "nodemon": "^2.0.3",
     "parcel-bundler": "^1.12.4",
     "rimraf": "^3.0.2"
@@ -17,7 +18,7 @@
     "prebuild": "npx rimraf dist",
     "build": "parcel build ./src/index.html",
     "predeploy": "yarn run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npx gh-pages -d dist"
   },
   "dependencies": {
     "reconnecting-websocket": "^4.4.0",
