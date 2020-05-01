@@ -8,10 +8,11 @@ import useLocalId from "./hooks/useLocalId"
 import useOffer from "./hooks/useOffer"
 import CallForm from "./components/CallForm"
 import useAutoCall from "./hooks/useAutoCall";
+import MyMediaStream from "./abs/MyMediaStream";
 
 const App = () => {
-  const [localStream, setLocalStream] = useState<MediaStream>()
-  const [remoteStream, setRemoteStream] = useState<MediaStream>()
+  const [localStream, setLocalStream] = useState<MyMediaStream>()
+  const [remoteStream, setRemoteStream] = useState<MyMediaStream>()
   const [remoteId, setRemoteId] = useState<string>()
 
   const localId = useLocalId()
@@ -24,14 +25,12 @@ const App = () => {
   useAutoCall(peer, signal, localId, remoteId, localStream)
 
   useEffect(() => {
-    window.navigator.mediaDevices
-      .getUserMedia({ video: { width: 320 } })
-      .then(setLocalStream)
+    MyMediaStream.fromUserMedia({ video: { width: 320 } }).then(setLocalStream)
   }, [])
 
   useEffect(() => {
     peer.addEventListener("track", (event) => {
-      setRemoteStream(event.streams[0])
+      setRemoteStream(new MyMediaStream(event.streams[0]))
     })
   }, [])
 
@@ -43,10 +42,10 @@ const App = () => {
     <Suspense fallback={null}>
       <section id={"video-chat"}>
         <h2>You ({localId})</h2>
-        {localStream && <VideoSteam mediaStream={localStream} />}
+        {localStream && <VideoSteam myMediaStream={localStream} />}
         <h2>Remote</h2>
         {remoteStream ? (
-          <VideoSteam mediaStream={remoteStream} />
+          <VideoSteam myMediaStream={remoteStream} />
         ) : (
           <CallForm onSubmit={handleCall} />
         )}

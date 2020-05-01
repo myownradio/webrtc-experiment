@@ -1,5 +1,6 @@
 import { Signal } from "./useSignal"
 import { useEffect, useState } from "react"
+import MyMediaStream from "../abs/MyMediaStream"
 
 interface MaybeSessionDescription {
   toId?: string
@@ -11,7 +12,7 @@ export default function useOffer(
   peer: RTCPeerConnection,
   signal: Signal,
   localId: string,
-  localStream?: MediaStream
+  localStream?: MyMediaStream
 ): null | Error {
   const [error, setError] = useState<null | Error>(null)
   useEffect(() => {
@@ -24,7 +25,11 @@ export default function useOffer(
           peer
             .setRemoteDescription(desc)
             .then(() => {
-              localStream.getTracks().forEach(track => peer.addTrack(track, localStream))
+              const { mediaStream } = localStream
+              // todo
+              mediaStream
+                .getTracks()
+                .forEach((track) => peer.addTrack(track, mediaStream))
               console.log("offer:createAnswer")
               return peer.createAnswer()
             })

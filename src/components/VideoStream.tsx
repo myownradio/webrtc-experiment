@@ -1,16 +1,17 @@
 import React, { useEffect, useRef } from "react"
+import MyMediaStream from "../abs/MyMediaStream";
 
 interface Props {
-  mediaStream: MediaStream
+  myMediaStream: MyMediaStream
 }
 
-const VideoSteam: React.FC<Props> = ({ mediaStream }) => {
+const VideoSteam: React.FC<Props> = ({ myMediaStream }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (!videoRef.current) return
-    videoRef.current.srcObject = mediaStream
-  }, [mediaStream])
+    videoRef.current.srcObject = myMediaStream.mediaStream
+  }, [myMediaStream])
 
   return <video ref={videoRef} autoPlay />
 }

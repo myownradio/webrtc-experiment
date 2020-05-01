@@ -1,21 +1,23 @@
 import { Signal } from "./useSignal"
 import { useEffect, useState } from "react"
+import MyMediaStream from "../abs/MyMediaStream"
 
 export default function useAutoCall(
   peer: RTCPeerConnection,
   signal: Signal,
   localId: string,
   remoteId?: string,
-  localStream?: MediaStream
+  localStream?: MyMediaStream
 ): null | Error {
   const [error, setError] = useState<null | Error>(null)
 
   useEffect(() => {
     if (!remoteId || !localStream) return
+    const { mediaStream } = localStream
 
-    localStream
+    mediaStream
       .getTracks()
-      .forEach((track) => peer.addTrack(track, localStream))
+      .forEach((track) => peer.addTrack(track, mediaStream))
 
     peer
       .createOffer()
