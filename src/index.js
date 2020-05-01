@@ -2,10 +2,12 @@ import EventEmitter from "events"
 import ReconnectingWebSocket from "reconnecting-websocket";
 
 function createPeer(localVideoElement, remoteVideoElement, signalingChannel, localCallId) {
-    const peer = new RTCPeerConnection()
+    const peer = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' },],
+    })
     const constraints = { video: true }
 
-    signalingChannel.subscribe(({ toId, fromId, desc }) => {
+    signalingChannel.subscribe(({ toId, fromId, desc, candidate }) => {
         if (desc) {
             if (desc.type === 'offer' && toId === localCallId) {
                 console.log('offer:setRemoteDescription')
@@ -22,20 +24,23 @@ function createPeer(localVideoElement, remoteVideoElement, signalingChannel, loc
                     return peer.setLocalDescription(answer)
                 }).then(() => {
                     console.log('offer:sendAnswer')
-                    setTimeout(() => {
-                        signalingChannel.emit({
-                            toId: fromId,
-                            fromId: toId,
-                            desc: peer.localDescription
-                        })
-                    }, 0)
+                    signalingChannel.emit({
+                        toId: fromId,
+                        fromId: toId,
+                        desc: peer.localDescription
+                    })
                 })
             } else if (desc.type === 'answer' && toId === localCallId) {
                 console.log('answer:setRemoteDescription')
                 peer.setRemoteDescription(desc)
             }
+        } else if (candidate) {
+            console.log('candidate:addIceCandidate')
+            peer.addIceCandidate(candidate)
         }
     })
+
+    peer.onicecandidate = ({ candidate }) => signalingChannel.emit({ candidate });
 
     peer.ontrack = (event) => {
         if (remoteVideoElement.srcObject) return
@@ -57,15 +62,12 @@ function createPeer(localVideoElement, remoteVideoElement, signalingChannel, loc
             return peer.setLocalDescription(offer)
         }).then(() => {
             console.log('call:sendOffer')
-            setTimeout(() => {
-                return signalingChannel.emit({
-                    toId: remoteCallId,
-                    fromId: localCallId,
-                    desc: peer.localDescription
-                })
-            }, 0)
+            return signalingChannel.emit({
+                toId: remoteCallId,
+                fromId: localCallId,
+                desc: peer.localDescription
+            })
         });
-
     }
 }
 
