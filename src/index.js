@@ -70,7 +70,7 @@ function createPeer(localVideoElement, remoteVideoElement, signalingChannel, loc
 }
 
 function wsSignalingChannel() {
-    const socket = new ReconnectingWebSocket("ws://localhost:8080")
+    const socket = new ReconnectingWebSocket("wss://wss.homefs.biz")
     const emitter = new EventEmitter()
 
     socket.addEventListener("message", message => {

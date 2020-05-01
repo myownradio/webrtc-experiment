@@ -12,8 +12,7 @@
   },
   "scripts": {
     "start": "concurrently -n w: npm:dev:*",
-    "dev:web": "parcel serve ./src/index.html",
-    "dev:server": "nodemon ./server.js"
+    "dev:web": "parcel serve ./src/index.html"
   },
   "dependencies": {
     "reconnecting-websocket": "^4.4.0",
