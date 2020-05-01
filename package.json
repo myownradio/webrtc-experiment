@@ -6,9 +6,17 @@
   "author": "Roman Lakhtadyr <roman.lakhtadyr@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "concurrently": "^5.2.0",
+    "nodemon": "^2.0.3",
     "parcel-bundler": "^1.12.4"
   },
   "scripts": {
-    "start": "parcel serve ./src/index.html"
+    "start": "concurrently -n w: npm:dev:*",
+    "dev:web": "parcel serve ./src/index.html",
+    "dev:server": "nodemon ./server.js"
+  },
+  "dependencies": {
+    "reconnecting-websocket": "^4.4.0",
+    "ws": "^7.2.5"
   }
 }

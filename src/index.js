@@ -1,82 +1,117 @@
 import EventEmitter from "events"
+import ReconnectingWebSocket from "reconnecting-websocket";
 
-function createPeer(videoElement, signalingChannel, ownCallId) {
+function createPeer(localVideoElement, remoteVideoElement, signalingChannel, localCallId) {
     const peer = new RTCPeerConnection()
     const constraints = { video: true }
 
-    signalingChannel.on('message', ({ toId, fromId, desc, candidate }) => {
-        console.log('message', desc, fromId, toId)
+    signalingChannel.subscribe(({ toId, fromId, desc }) => {
         if (desc) {
-            if (desc.type === 'offer' && toId === ownCallId) {
+            if (desc.type === 'offer' && toId === localCallId) {
+                console.log('offer:setRemoteDescription')
                 peer.setRemoteDescription(desc).then(() => {
+                    console.log('offer:getUserMedia')
                     return navigator.mediaDevices.getUserMedia(constraints)
                 }).then(stream => {
+                    console.log('offer:addTrack')
                     stream.getTracks().forEach(track => peer.addTrack(track, stream))
+                    console.log('offer:createAnswer')
                     return peer.createAnswer()
                 }).then(answer => {
+                    console.log('offer:setLocalDescription')
                     return peer.setLocalDescription(answer)
                 }).then(() => {
-                    console.log('send answer')
+                    console.log('offer:sendAnswer')
                     setTimeout(() => {
-                        signalingChannel.emit('message', {
+                        signalingChannel.emit({
                             toId: fromId,
                             fromId: toId,
                             desc: peer.localDescription
                         })
                     }, 0)
                 })
-            } else if (desc.type === 'answer' && toId === ownCallId) {
-                console.log('answer received')
+            } else if (desc.type === 'answer' && toId === localCallId) {
+                console.log('answer:setRemoteDescription')
                 peer.setRemoteDescription(desc)
             }
-        } else if (candidate) {
-            peer.addIceCandidate(candidate)
         }
     })
 
     peer.ontrack = (event) => {
-        console.log('ontrack', ownCallId, event)
-        if (videoElement.srcObject) return
-        videoElement.srcObject = event.streams[0]
+        if (remoteVideoElement.srcObject) return
+        remoteVideoElement.srcObject = event.streams[0]
     }
 
-    return function callTo(theirCallId) {
-        peer.onnegotiationneeded = () => {
-            console.log('negotiation')
-            peer.createOffer().then(offer => {
-                console.log('offer created', offer)
-                return peer.setLocalDescription(offer)
-            }).then(() => {
-                console.log('signaling offer')
-
-                setTimeout(() => {
-                    return signalingChannel.emit("message", {
-                        toId: theirCallId,
-                        fromId: ownCallId,
-                        desc: peer.localDescription
-                    })
-                }, 0)
-            })
-        }
-
+    return function callTo(remoteCallId) {
+        console.log('call:getUserMedia')
         navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
-                console.log('sending tracks')
+                console.log('call:addTrack')
                 stream.getTracks().forEach(track => peer.addTrack(track, stream))
-                videoElement.srcObject = stream
-            })
+                localVideoElement.srcObject = stream
+            }).then(() => {
+            console.log('call:createOffer')
+            return peer.createOffer()
+        }).then(offer => {
+            console.log('call:setLocalDescription')
+            return peer.setLocalDescription(offer)
+        }).then(() => {
+            console.log('call:sendOffer')
+            setTimeout(() => {
+                return signalingChannel.emit({
+                    toId: remoteCallId,
+                    fromId: localCallId,
+                    desc: peer.localDescription
+                })
+            }, 0)
+        });
+
+    }
+}
+
+function wsSignalingChannel() {
+    const socket = new ReconnectingWebSocket("ws://localhost:8080")
+    const emitter = new EventEmitter()
+
+    socket.addEventListener("message", message => {
+        try {
+            const msg = JSON.parse(message.data)
+            emitter.emit('message', msg)
+        } catch (e) {
+            /* NOP */
+        }
+    })
+
+    return {
+        subscribe: (cb) => {
+            emitter.on('message', msg => cb(msg))
+        },
+        emit: (msg) => {
+            socket.send(JSON.stringify(msg))
+        }
     }
 }
 
 (function main() {
+    const ownId = window.location.search
+
     const video1 = document.getElementById("video1")
     const video2 = document.getElementById("video2")
+    const form = document.getElementById("form")
 
-    const signalingChannel = new EventEmitter()
+    const signalingChannel = wsSignalingChannel()
 
-    const foo = createPeer(video1, signalingChannel, 'foo')
-    const bar = createPeer(video2, signalingChannel, 'bar')
+    const call = createPeer(video1, video2, signalingChannel, ownId)
 
-    foo('bar')
+    form.addEventListener("submit", event => {
+        event.preventDefault()
+        const name = form.elements[0].value
+        call(name)
+    })
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video1.srcObject = stream
+        })
 })()
 
